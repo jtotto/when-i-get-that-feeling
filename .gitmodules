@@ -1,0 +1,3 @@
+[submodule "CaboOSe"]
+	path = CaboOSe
+	url = https://github.com/jtotto/CaboOSe
