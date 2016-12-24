@@ -1,0 +1,7 @@
+*.swp
+*.o
+*.a
+*.elf
+*.img
+*.d
+offsets.h

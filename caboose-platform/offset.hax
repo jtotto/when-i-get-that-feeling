@@ -1,0 +1,29 @@
+/* This is the preprocessor machinery needed to get reliable access to C struct
+ * offsets from assembly.  It is based on the guide found at
+ * http://www.avrbeginners.net/new/wp-content/uploads/2011/08/
+ * avrbeginners_30_Accessing_C_Structs_in_Assembler_1.1.pdf */
+
+/* Explanation:
+ * - _ASMOFFSET() yields an inline assembly statement that, when assembled,
+ *   produces an isolated line of the form "HAX :( <macro_name> <offset_value>"
+ *   that can subsequently be grepped for.
+ * - ASMOFFSET() invokes _ASMOFFSET with a name that combines the structure and
+ *   member names and the actual offset of the member within the struct.
+ */
+#define _ASMOFFSET(macro_name, offset_value) \
+    __asm__ volatile ("\nHAX :( " #macro_name " %0 \n" : : "i"(offset_value))
+#define ASMOFFSET(structure, member) \
+    _ASMOFFSET(structure##_##member##_offset, offsetof(struct structure, member))
+ 
+#include <caboose-platform/frames.h>
+#include <caboose/state.h>
+
+void dummy(void)
+{
+    ASMOFFSET(caboose, tasks);
+    ASMOFFSET(tasks, active);
+    ASMOFFSET(task, sp);
+    ASMOFFSET(svcframe, sf_r0);
+    ASMOFFSET(irqframe, if_lr);
+    ASMOFFSET(irqframe, if_lr_irq);
+}

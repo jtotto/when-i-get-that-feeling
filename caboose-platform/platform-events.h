@@ -1,0 +1,6 @@
+#ifndef CABOOSE_PLATFORM_EVENTS_H
+#define CABOOSE_PLATFORM_EVENTS_H
+
+#define TIMER_EVENTID 0
+
+#endif
