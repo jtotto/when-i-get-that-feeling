@@ -1,8 +1,27 @@
 #include <stdint.h>
 
+#include <caboose/util.h>
+
 #include "bcm2835.h"
+#include "util.h"
 
 /* PL011 register bits from Xen. */
+
+struct pl011regs {
+    uint32_t dr;
+    PAD(ARM_UART0_DR, ARM_UART0_FR);
+    uint32_t fr;
+    PAD(ARM_UART0_FR, ARM_UART0_IBRD);
+    uint32_t ibrd;
+    uint32_t fbrd;
+    uint32_t lcrh;
+    uint32_t cr;
+    uint32_t ifls;
+    uint32_t imsc;
+    uint32_t ris;
+    uint32_t mis;
+    uint32_t icr;
+} __packed;
 
 /* CR bits */
 #define CTSEN  (1<<15) /* automatic CTS hardware flow control */
@@ -40,48 +59,18 @@
 #define RIMI  (1<<0)  /* nUARTRI Modem interrupt mask */
 #define ALLI  OEI|BEI|PEI|FEI|RTI|TXI|RXI|DSRMI|DCDMI|CTSMI|RIMI
 
-static void delay(unsigned int count)
-{
-    while (count--) {
-        asm volatile ("nop");
-    }
-}
-
 /* The helpful comments in this initialization routine are from uart.cc in the
  * raspbootin serial bootloader. */
 
 uint8_t *uart0_init(uint8_t *pool)
 {
-    volatile uint32_t *cr, *icr, *ibrd, *fbrd, *lcrh,  *imsc;
-    cr = (uint32_t *)ARM_UART0_CR;
-    icr = (uint32_t *)ARM_UART0_ICR;
-    ibrd = (uint32_t *)ARM_UART0_IBRD;
-    fbrd = (uint32_t *)ARM_UART0_FBRD;
-    lcrh = (uint32_t *)ARM_UART0_LCRH;
-    imsc = (uint32_t *)ARM_UART0_IMSC;
-
-    volatile uint32_t *gppud, *gppudclk0;
-    gppud = (uint32_t *)ARM_GPIO_GPPUD;
-    gppudclk0 = (uint32_t *)ARM_GPIO_GPPUDCLK0;
+    volatile struct pl011regs *uart = (struct pl011regs *)ARM_UART0_BASE;
 
     /* Disable UART0 by clearing all CR bits. */
-    *cr = 0;
-
-    /* Setup GPIO pins 14 && 15. */
-
-    /* Disable pull up/down for all GPIO pins & delay */
-    *gppud = 0x00000000;
-    delay(200);
-
-    /* Disable pull up/down for pin 14,15 & delay */
-    *gppudclk0 = (1 << 14) | (1 << 15);
-    delay(200);
-
-    /* Write 0 to GPPUDCLK0 to make it take effect. */
-    *gppudclk0 = 0x00000000;
+    uart->cr = 0;
 
     /* Clear pending interrupts. */
-    *icr = ALLI;
+    uart->icr = ALLI;
 
     /* Set integer & fractional part of baud rate.
      * Divider = UART_CLOCK/(16 * Baud)
@@ -97,30 +86,28 @@ uint8_t *uart0_init(uint8_t *pool)
      * The below values work for my current boot firmware revisions - it looks
      * like rsta2 has a clever strategy for dynamically determining UART_CLOCK,
      * but for now this is good enough for me. */
-    *ibrd = 26;
-    *fbrd = 3;
+    uart->ibrd = 26;
+    uart->fbrd = 3;
 
     /* Enable FIFO & 8 bit data transmission (1 stop bit, no parity). */
-    *lcrh = FEN | ((8 - 5) << 5);
+    uart->lcrh = FEN | ((8 - 5) << 5);
 
     /* Mask all interrupts. */
-    *imsc = ALLI;
+    uart->imsc = ALLI;
 
     /* Enable UART0, receive & transmit part of UART. */
-    *cr = UARTEN | TXE | RXE;
+    uart->cr = UARTEN | TXE | RXE;
 
     return pool;
 }
 
 void uart0_putc(uint8_t c)
 {
-    volatile uint32_t *fr, *dr;
-    fr = (uint32_t *)ARM_UART0_FR;
-    dr = (uint32_t *)ARM_UART0_DR;
+    volatile struct pl011regs *uart = (struct pl011regs *)ARM_UART0_BASE;
 
-    while (!(*fr & TXFE)) {
+    while (!(uart->fr & TXFE)) {
         /* wait */
     }
 
-    *dr = c;
+    uart->dr = c;
 }
