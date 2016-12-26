@@ -1,3 +1,6 @@
 [submodule "CaboOSe"]
 	path = CaboOSe
 	url = https://github.com/jtotto/CaboOSe
+[submodule "mini-printf"]
+	path = mini-printf
+	url = https://github.com/jtotto/mini-printf.git

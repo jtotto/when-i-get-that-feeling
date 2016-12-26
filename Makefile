@@ -7,8 +7,9 @@ OBJDUMP = $(PREFIX)objdump
 
 CABOOSE = CaboOSe/kernel
 PLATFORM = caboose-platform
+PRINTF = mini-printf
 
-CPPFLAGS = -MMD -MP -I. -I$(CABOOSE) -iquote$(CABOOSE)/caboose
+CPPFLAGS = -MMD -MP -I. -I$(CABOOSE) -I$(PRINTF) -iquote$(CABOOSE)/caboose
 CFLAGS = -Wall \
 		 -Werror \
 		 -std=gnu99 \
@@ -28,6 +29,7 @@ all: kernel.img
 
 OBJS := $(patsubst %.c, %.o, $(wildcard *.c)) \
 	$(patsubst $(CABOOSE)/%.c, $(CABOOSE)/%.o, $(wildcard $(CABOOSE)/*.c)) \
+	$(patsubst $(PRINTF)/%.c, $(PRINTF)/%.o, $(wildcard $(PRINTF)/*.c)) \
 	$(patsubst $(PLATFORM)/%.c, $(PLATFORM)/%.o, $(wildcard $(PLATFORM)/*.c))
 
 AOBJS := \
