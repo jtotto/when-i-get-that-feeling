@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#include <caboose/util.h>
+
 struct svcframe {
     uint32_t sf_spsr;
     uint32_t sf_r0;
@@ -15,7 +17,7 @@ struct svcframe {
     uint32_t sf_r10;
     uint32_t sf_r11;
     uint32_t sf_lr;
-} __attribute__((packed));
+} __packed;
 
 struct irqframe {
     uint32_t if_spsr;
@@ -34,6 +36,6 @@ struct irqframe {
     uint32_t if_r11;
     uint32_t if_r12;
     uint32_t if_lr;
-} __attribute__((packed));
+} __packed;
 
 #endif
