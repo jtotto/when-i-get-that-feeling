@@ -68,7 +68,7 @@ engine:
 irq_return:
     cps #IRQ_MODE
     /********* IRQ ***********/
-    orr r0, #0x80000000     /* Make sp great again. */
+    bic r0, #0x80000000     /* Make sp great again. */
     ldmia r0!, { r1, r2 }   /* Fetch the spsr and lr from the stack. */
     msr spsr, r1            /* Restore spsr. */
     mov lr, r2              /* Restore lr (the interrupted instruction). */
