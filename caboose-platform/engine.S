@@ -47,7 +47,7 @@ activate:
     /********* SUPERVISOR ***********/
     bl schedule             /* Find the next task to activate. */
     tst r0, #0x80000000     /* Did we enter through an IRQ, or an SVC? */
-    beq irq_return          /* => IRQ */
+    bne irq_return          /* => IRQ */
 
     /* If we're here, we're returning from SVC. */
     ldmia r0!, { r5 }       /* Load the spsr from the SVC frame into r5. */
@@ -95,11 +95,9 @@ irq_except:
     cps #SYSTEM_MODE                /* Back to system mode to stack them. */
     /********* SYSTEM ***********/
     stmfd sp!, { r0, r1 }           /* Actually save them. */
-    bic sp, #0x80000000             /* Clear the most significant bit of sp so
+    orr sp, #0x80000000             /* Set the most significant bit of sp so
                                      * that we remember we need to resume an
-                                     * irqframe rather than a trapframe (system
-                                     * memory starts from 0x80000000 so this bit
-                                     * can safely be abused). */
+                                     * irqframe rather than an svcframe. */
     save_sp r0 sp                   /* Save sp to the active task. */
 
     cps #SVC_MODE
