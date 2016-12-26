@@ -4,8 +4,8 @@
 
 #include "frames.h"
 #include "irq.h"
+#include "pl011-uart.h"
 #include "syscalltable.h"
-#include "timer.h"
 
 extern uint8_t bss_start;
 extern uint8_t bss_end;
@@ -52,8 +52,8 @@ void platform_init(uint8_t *pool)
     /* Clear the bss section. */
     memset(&bss_start, 0, &bss_end - &bss_start);
 
+    pool = uart0_init(pool);
     pool = irq_init(pool);
-    pool = timer_init(pool);
 
     /* Hand it over to the generic kernel initialization, which will start the
      * scheduler when it's ready. */
