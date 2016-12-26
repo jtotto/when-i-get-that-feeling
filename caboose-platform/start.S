@@ -48,7 +48,7 @@ start:
     b platform_init
 
 /* Bits 0-4 of the VBAR are reserved, so we need the vector table to be 32-byte
- * aligned.  Helpful comments courtesy of Embedded Xinu. */
+ * aligned.  Helpful descriptions courtesy of Embedded Xinu. */
 .balign 32
 vector_table:
     ldr pc, reset_addr    /* Reset handler */
@@ -60,14 +60,31 @@ vector_table:
     ldr pc, irq_addr      /* IRQ (Interrupt request) handler */
     ldr pc, fiq_addr      /* FIQ (Fast interrupt request) handler */
 
-reset_addr:     .word dead
-undef_addr:     .word dead
+reset_addr:     .word dead1
+undef_addr:     .word dead2
 svc_addr:       .word software_except
-prefetch_addr:  .word dead
-abort_addr:     .word dead
-reserved_addr:  .word dead
+prefetch_addr:  .word dead3
+abort_addr:     .word dead4
+reserved_addr:  .word dead5
 irq_addr:       .word irq_except
-fiq_addr:       .word dead
+fiq_addr:       .word dead6
 
-dead:
-    b dead
+reallydead:
+    b reallydead
+
+.macro dead type
+dead\type:
+    mov sp, #0x8000
+    mov r0, #\type
+    mov r1, lr
+    bl debug_exception
+    b reallydead
+ .endm
+
+dead 1
+dead 2
+dead 3
+dead 4
+dead 5
+dead 6
+

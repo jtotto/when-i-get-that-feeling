@@ -41,7 +41,7 @@ OBJS += $(AOBJS)
 DEPS = $(OBJS:.o=.d)
 -include $(DEPS)
 
-$(PLATFORM)/offsets.h: caboose-platform/offset.hax
+$(PLATFORM)/offsets.h: $(PLATFORM)/offset.hax
 	echo "#ifndef OFFSET_HAX_H" > $(PLATFORM)/offsets.h
 	echo "#define OFFSET_HAX_H" >> $(PLATFORM)/offsets.h
 	cat $^ | $(CC) -S $(CPPFLAGS) $(CFLAGS) -o - -xc - | \
