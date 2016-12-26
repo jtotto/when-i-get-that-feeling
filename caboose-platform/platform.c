@@ -2,6 +2,7 @@
 #include <caboose/state.h>
 #include <caboose/syscall.h>
 
+#include "debug.h"
 #include "frames.h"
 #include "irq.h"
 #include "pl011-uart.h"
@@ -13,10 +14,14 @@ extern uint8_t bss_end;
 void caboose_init(uint8_t *pool);
 uint8_t *exception_init(uint8_t *pool);
 
+#if YOU_NEED_THIS_LATER
 static void sys_Unimplemented(void)
 {
     ASSERT(false);
 }
+#endif
+
+void sys_Assert(const char *msg);
 
 /* We exploit AAPCS to simplify our syscall mechanism, leaving the argument
  * registers untouched during the system call context switch so that all of the
@@ -43,8 +48,7 @@ void *syscalls[] = {
     [SYSCALL_ASYNC_SEND] = sys_AsyncSend,
     [SYSCALL_ASYNC_RECEIVE] = sys_AsyncReceive,
     [SYSCALL_AWAITEVENT] = sys_AwaitEvent,
-    [SYSCALL_SHUTDOWN] = sys_Unimplemented,
-    [SYSCALL_ASSERT] = sys_Unimplemented
+    [SYSCALL_ASSERT] = sys_Assert
 };
 
 void platform_init(uint8_t *pool)
@@ -93,4 +97,12 @@ uint16_t platform_scheduling_timer_read(void)
 void platform_scheduling_timer_reset(void)
 {
     /* XXX */
+}
+
+void sys_Assert(const char *msg)
+{
+    debug_printf(msg);
+    while(true) {
+        /* do nothing */
+    }
 }

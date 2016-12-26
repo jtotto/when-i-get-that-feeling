@@ -19,5 +19,4 @@ syscall Reply, SYSCALL_REPLY
 syscall AsyncSend, SYSCALL_ASYNC_SEND
 syscall AsyncReceive, SYSCALL_ASYNC_RECEIVE
 syscall AwaitEvent, SYSCALL_AWAITEVENT
-syscall Shutdown, SYSCALL_SHUTDOWN
 syscall Assert, SYSCALL_ASSERT
