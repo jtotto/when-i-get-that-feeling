@@ -12,9 +12,6 @@ void application(void)
 {
     debug_printf("Get up, get up, get up, get up!");
 
-    Create(2, samplesrc);
-    Create(3, audio);
-
     while (true) {
         /* Eat the timer events. */
         AwaitEvent(TIMER_EVENTID);
