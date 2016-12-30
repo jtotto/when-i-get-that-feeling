@@ -2,5 +2,6 @@
 #define CABOOSE_PLATFORM_EVENTS_H
 
 #define TIMER_EVENTID 0
+#define DMA0_EVENTID 1
 
 #endif

@@ -3,7 +3,7 @@
 
 /* How many types of 'external events' does your platform/application support?
  * A common configuration maps interesting interrupts 1:1 to events. */
-#define CONFIG_EVENT_COUNT 1
+#define CONFIG_EVENT_COUNT 2
 
 /* How many notifications should be buffered for each type of external event? */
 #define CONFIG_EVENT_RING_COUNT 32

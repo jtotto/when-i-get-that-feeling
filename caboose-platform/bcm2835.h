@@ -92,6 +92,8 @@
 // Platform DMA Controller
 //
 #define ARM_DMA_BASE		(ARM_IO_BASE + 0x7000)
+#define ARM_DMA_STAT		(ARM_DMA_BASE + 0x7FE0)
+#define ARM_DMA_ENAB		(ARM_DMA_BASE + 0x7FF0)
 
 //
 // Interrupt Controller
@@ -161,6 +163,8 @@
 
 #define ARM_CM_GP0CTL		(ARM_CM_BASE + 0x70)
 #define ARM_CM_GP0DIV		(ARM_CM_BASE + 0x74)
+
+#define ARM_CM_PWM_BASE		(ARM_CM_BASE + 0xA0)
 
 #define ARM_CM_PASSWD 		(0x5A << 24)
 
