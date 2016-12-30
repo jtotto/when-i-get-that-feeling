@@ -4,3 +4,6 @@
 [submodule "mini-printf"]
 	path = mini-printf
 	url = https://github.com/jtotto/mini-printf.git
+[submodule "uspi"]
+	path = uspi
+	url = https://github.com/jtotto/uspi
