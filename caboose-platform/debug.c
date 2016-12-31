@@ -7,12 +7,17 @@
 
 void debug_printf(const char *fmt, ...)
 {
-    int size;
-    uint8_t buf[2048];
     va_list va;
     va_start(va, fmt);
-    size = mini_vsnprintf((char *)buf, sizeof buf, fmt, va);
+    debug_vprintf(fmt, va);
     va_end(va);
+}
+
+void debug_vprintf(const char *fmt, va_list ap)
+{
+    int size;
+    uint8_t buf[2048];
+    size = mini_vsnprintf((char *)buf, sizeof buf, fmt, ap);
 
     for (int i = 0; i < size; i++) {
         uart0_putc(buf[i]);
