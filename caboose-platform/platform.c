@@ -5,6 +5,7 @@
 #include "debug.h"
 #include "frames.h"
 #include "irq.h"
+#include "pgalloc.h"
 #include "pl011-uart.h"
 #include "syscalltable.h"
 #include "timer.h"
@@ -60,6 +61,7 @@ void platform_init(uint8_t *pool)
     pool = uart0_init(pool);
     pool = irq_init(pool);
     pool = timer_init(pool);
+    pool = pgalloc_init(pool);
 
     /* Hand it over to the generic kernel initialization, which will start the
      * scheduler when it's ready. */
