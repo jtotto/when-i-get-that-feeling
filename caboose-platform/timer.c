@@ -11,10 +11,8 @@
  * BCM2835 peripherals document.  Lots of inspiration taken from the Circle
  * CTimer. */
 
-#define CLOCK_FREQ 1000000 /* RPi baremetal forum community wisdom */
-
 #define TICK_HZ 1   /* for now we're not using this for anything serious */
-#define COMPARE_INCREMENT (CLOCK_FREQ / TICK_HZ)
+#define COMPARE_INCREMENT (CABOOSE_PLATFORM_TIMER_CLOCK_FREQ / TICK_HZ)
 
 struct systimerregs {
     uint32_t cs;
@@ -63,6 +61,5 @@ uint32_t timer_read(void)
     volatile struct systimerregs *timer =
         (struct systimerregs *)ARM_SYSTIMER_BASE;
 
-    debug_printf("match %u control %u", timer->c3, timer->cs);
     return timer->clo;
 }
