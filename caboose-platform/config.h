@@ -1,5 +1,5 @@
-#ifndef SXLHLNG_CABOOSE_CONFIG_H
-#define SXLHLNG_CABOOSE_CONFIG_H
+#ifndef SXLHLG_CABOOSE_CONFIG_H
+#define SXLHLG_CABOOSE_CONFIG_H
 
 /* How many types of 'external events' does your platform/application support?
  * A common configuration maps interesting interrupts 1:1 to events. */

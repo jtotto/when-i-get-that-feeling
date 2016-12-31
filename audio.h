@@ -1,5 +1,5 @@
-#ifndef SXLHLNG_AUDIO_H
-#define SXLHLNG_AUDIO_H
+#ifndef SXLHLG_AUDIO_H
+#define SXLHLG_AUDIO_H
 
 #include "messages.h"
 

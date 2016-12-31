@@ -1,5 +1,5 @@
-#ifndef SXLHLNG_MESSAGES_H
-#define SXLHLNG_MESSAGES_H
+#ifndef SXLHLG_MESSAGES_H
+#define SXLHLG_MESSAGES_H
 
 #include <stdint.h>
 
