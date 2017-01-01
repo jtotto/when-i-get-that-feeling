@@ -1,6 +1,8 @@
 #ifndef SXLHLG_CABOOSE_CONFIG_H
 #define SXLHLG_CABOOSE_CONFIG_H
 
+/* ---------------- CaboOSe standard configuration. ---------------- */
+
 /* How many types of 'external events' does your platform/application support?
  * A common configuration maps interesting interrupts 1:1 to events. */
 #define CONFIG_EVENT_COUNT 2
@@ -33,5 +35,16 @@
 
 /* How many priorities should the scheduler support? */
 #define CONFIG_PRIORITY_COUNT 32
+
+/* ---------------- Application-specific configuration. ---------------- */
+
+/* To which core (0-3) should ARM IRQs be routed? (see irq.c) */
+#define CONFIG_IRQ_CORE 0
+
+/* To which core (0-3) should ARM FIQs be routed? (see irq.c) */
+#define CONFIG_FIQ_CORE 1
+
+/* How large should the stack allocated for handling FIQ exceptions be? */
+#define CONFIG_FIQ_STACK_SIZE CONFIG_TASK_STACK_SIZE
 
 #endif

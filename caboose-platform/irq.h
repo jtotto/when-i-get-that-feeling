@@ -9,5 +9,6 @@ void irq_enable(uint8_t irq);
 void irq_disable(uint8_t irq);
 
 void irq_register(uint8_t irq, void (*handler)(void));
+void fiq_register(uint8_t irq);
 
 #endif

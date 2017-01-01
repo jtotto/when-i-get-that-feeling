@@ -67,7 +67,7 @@ prefetch_addr:  .word dead3
 abort_addr:     .word dead4
 reserved_addr:  .word dead5
 irq_addr:       .word irq_except
-fiq_addr:       .word dead6
+fiq_addr:       .word fiq_except
 
 reallydead:
     b reallydead
