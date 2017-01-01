@@ -6,10 +6,11 @@
 #include <mini-printf.h>
 
 #include <caboose/state.h>
+#include <caboose/util.h>
 
 #include "frames.h"
 
-void Assert(const char *msg);
+void Assert(const char *msg) __noreturn;
 
 #define ASSERT(pred) do {                                               \
     if (!(pred)) {                                                      \
