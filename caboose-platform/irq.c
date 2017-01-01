@@ -5,6 +5,7 @@
 #include "bcm2835int.h"
 #include "bcm2836.h"
 #include "debug.h"
+#include "ipi.h"
 #include "irq.h"
 #include "util.h"
 
@@ -88,6 +89,11 @@ void irq_register(uint8_t irq, void (*handler)(void))
 void irq_service(void)
 {
     volatile struct irqregs *irqregs = (struct irqregs *)ARM_IC_BASE;
+
+    /* It's possible that the IRQ line is being asserted by the core local
+     * mailbox we're using to implement IPIs.  That mailbox doesn't have a bit
+     * in any of the pending registers, so we'll have to check it directly. */
+    ipi_service();
 
     /* The logic here is a bit tangly, but the idea is that we don't want to
      * call it quits until we're really sure there aren't any IRQs asserted - in

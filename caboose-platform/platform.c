@@ -4,6 +4,7 @@
 
 #include "debug.h"
 #include "frames.h"
+#include "ipi.h"
 #include "irq.h"
 #include "mmu.h"
 #include "pgalloc.h"
@@ -65,6 +66,7 @@ void platform_init(uint8_t *pool)
     pool = uart0_init(pool);
     pool = mmu_init(pool);
     pool = irq_init(pool);
+    pool = ipi_init(pool);
     pool = timer_init(pool);
     pool = pgalloc_init(pool);
 
