@@ -28,7 +28,7 @@ void debug_vprintf(const char *fmt, va_list ap)
 
 void debug_exception(uint32_t type, uint32_t lr)
 {
-    debug_printf("!!! Fatal exception !!! %u %x", type, lr);
+    debug_printf("!!! Fatal exception !!! %u 0x%08x", type, lr);
 }
 
 void debug_gothere(void)
@@ -36,7 +36,12 @@ void debug_gothere(void)
     debug_printf("Made it here?");
 }
 
-void debug_hexdump(uint8_t *data, size_t len)
+void debug_dumpreg(uint32_t reg)
+{
+    debug_printf("Dump reg: %08x", reg);
+}
+
+void debug_hexdump(const uint8_t *data, size_t len)
 {
     debug_printf("Begin hex dump");
     while (len >= 16) {
