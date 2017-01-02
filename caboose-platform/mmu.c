@@ -6,6 +6,16 @@
 #include "bcm2835.h"
 #include "mmu.h"
 
+/* Cache control primitives. */
+void cache_enable(void);
+uint32_t dcache_min(void);
+void dcache_invalidate_line(void *addr);
+void dcache_clean_line(void *addr);
+void dcache_clean_and_invalidate_line(void *addr);
+
+/* XXX We assume this doesn't vary across cores and can be shared globally. */
+int cacheline_len;
+
 /* "System software often requires invalidation of a range of addresses that
  * might be present in multiple processors. This is accomplished with a loop of
  * invalidate cache by MVA CP15 operations that step through the address space
@@ -18,18 +28,8 @@
  * BABHAEIF.html
  */
 
-/* Cache control primitives. */
-void cache_enable(void);
-uint32_t dcache_min(void);
-void dcache_invalidate_line(void *addr);
-void dcache_clean_line(void *addr);
-void dcache_clean_and_invalidate_line(void *addr);
-
-/* XXX We assume this doesn't vary across cores and can be shared globally. */
-int cacheline_len;
-
 /* Let the optimizer fold all this away. */
-static void dcachectl_do_range(void *addr, int len, void (*op)(void *addr))
+static void cache_do_range(void *addr, int len, void (*op)(void *addr))
 {
     /* How many cache lines does this range span? */
     size_t lines = (len + cacheline_len - 1) / cacheline_len;
@@ -40,37 +40,37 @@ static void dcachectl_do_range(void *addr, int len, void (*op)(void *addr))
     }
 }
 
-void dcachectl_clean_range(void *addr, int len)
+void cache_clean_range(void *addr, int len)
 {
-    dcachectl_do_range(addr, len, dcache_clean_line);
+    cache_do_range(addr, len, dcache_clean_line);
 }
 
-void dcachectl_invalidate_range(void *addr, int len)
+void cache_invalidate_range(void *addr, int len)
 {
-    dcachectl_do_range(addr, len, dcache_invalidate_line);
+    cache_do_range(addr, len, dcache_invalidate_line);
 }
 
-void dcachectl_clean_and_invalidate_range(void *addr, int len)
+void cache_clean_and_invalidate_range(void *addr, int len)
 {
-    dcachectl_do_range(addr, len, dcache_clean_and_invalidate_line);
+    cache_do_range(addr, len, dcache_clean_and_invalidate_line);
 }
 
 void sys_Clean(void *addr, int len)
 {
     dsb();
-    dcachectl_clean_range(addr, len);
+    cache_clean_range(addr, len);
 }
 
 void sys_Invalidate(void *addr, int len)
 {
-    dcachectl_invalidate_range(addr, len);
+    cache_invalidate_range(addr, len);
     dsb();
 }
 
 void sys_CleanAndInvalidate(void *addr, int len)
 {
     dsb();
-    dcachectl_clean_and_invalidate_range(addr, len);
+    cache_clean_and_invalidate_range(addr, len);
     dsb();
 }
 
@@ -109,17 +109,22 @@ void mmu_set_domain_access(uint8_t domain, uint8_t access);
 void mmu_flush_tlb(void);
 void mmu_enable(void);
 
-uint8_t *mmu_init(uint8_t *pool)
+uint8_t *mmu_pagetable_alloc(uint8_t *pool, void **pagetable)
+{
+    /* The page table needs to be 16K-aligned. */
+    uint32_t baseaddr = ALIGN((uint32_t)pool, (1 << 14));
+    *pagetable = (void *)baseaddr;
+    return (uint8_t *)(baseaddr + PAGE_TABLE_SIZE);
+}
+
+void mmu_init(void *tablemem)
 {
     cacheline_len = dcache_min();
 
     mmu_enable_smp();
 
-    /* The page table needs to be 16K-aligned. */
-    uint32_t baseaddr = ALIGN((uint32_t)pool, (1 << 14));
     volatile struct mmu_section_descriptor *pagetable =
-        (struct mmu_section_descriptor *)baseaddr;
-
+        (struct mmu_section_descriptor *)tablemem;
     int i;
     for (i = 0; i < PAGE_TABLE_PHYSICAL_ENTRIES; i++) {
         pagetable[i] = (struct mmu_section_descriptor) {
@@ -136,7 +141,6 @@ uint8_t *mmu_init(uint8_t *pool)
     }
 
     for (i = PAGE_TABLE_PHYSICAL_ENTRIES; i < PAGE_TABLE_ENTRIES; i++) {
-
         pagetable[i] = (struct mmu_section_descriptor) {
             .type = 0b10,
             /* strongly-ordered memory accesses, please */
@@ -153,8 +157,8 @@ uint8_t *mmu_init(uint8_t *pool)
 
     /* Make sure that the table is fully coherent in main memory before
      * proceeding to use it. */
-    dcachectl_clean_range((void *)pagetable, PAGE_TABLE_SIZE);
     dsb();
+    cache_clean_range((void *)pagetable, PAGE_TABLE_SIZE);
     isb();
 
     /* Configure the Translation Table Base Register 0 to point to our
@@ -173,6 +177,27 @@ uint8_t *mmu_init(uint8_t *pool)
 
     /* And enable the caches, too. */
     cache_enable();
+}
 
-    return (uint8_t *)(baseaddr + PAGE_TABLE_SIZE);
+void mmu_mark_strongly_ordered(void *tablemem, void *section)
+{
+    uint32_t secnum = (uint32_t)section / SECTION_SIZE;
+    volatile struct mmu_section_descriptor *pagetable =
+        (struct mmu_section_descriptor *)tablemem;
+
+    pagetable[secnum] = (struct mmu_section_descriptor) {
+        .type = 0b10,
+        .bufferable = 0,
+        .cacheable = 0,
+        .impl1 = 0,
+        .domain = 0,
+        .impl2 = 0,
+        .access = 0b10,
+        .impl3 = 0,
+        .baseaddr = secnum /* identity-mapped, as before */
+    };
+
+    dsb();
+    cache_clean_range((void *)&pagetable[secnum], sizeof pagetable[secnum]);
+    mmu_flush_tlb();
 }

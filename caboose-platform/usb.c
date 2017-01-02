@@ -15,6 +15,7 @@
 #include "ipi.h"
 #include "irq.h"
 #include "mempool.h"
+#include "mmu.h"
 #include "platform-events.h"
 #include "secondary.h"
 #include "timer.h"
@@ -36,8 +37,9 @@
     }                                                                       \
 } while (0)
 
-uint8_t *svc_stack;
-uint8_t *fiq_stack;
+uint8_t *usb_svc_stack;
+uint8_t *usb_fiq_stack;
+void *usb_pagetable;
 
 /* State required for the USPi platform portability layer. */
 struct {
@@ -45,6 +47,7 @@ struct {
 
     TInterruptHandler *handler;
     void *param;
+    void *mailbuffer;
 } uspios;
 
 void usb_start(void);
@@ -71,14 +74,25 @@ uint8_t *usb_init(uint8_t *pool)
     /* Start by allocating it stacks to use in SVC and FIQ mode. */
     pool = (uint8_t *)ALIGN((uintptr_t)pool, 8);
     pool += CONFIG_USB_STACK_SIZE;
-    svc_stack = pool;
+    usb_svc_stack = pool;
 
     pool += CONFIG_FIQ_STACK_SIZE;
-    fiq_stack = pool;
+    usb_fiq_stack = pool;
 
-    /* Ensure that all of the writes to global state read by Core 1 are
-     * complete, and then bring it up. */
-    dsb();
+    /* Allocate memory for Core 1's page table. */
+    pool = mmu_pagetable_alloc(pool, &usb_pagetable);
+
+    /* Allocate a section for the mailbox communication code. */
+    uspios.mailbuffer = (void *)ALIGN((uintptr_t)pool, SECTION_SIZE);
+    pool += SECTION_SIZE;
+
+    /* Ensure that all of the writes to global state read by Core 1 are complete
+     * and have made it back to main memory, and then bring it up. */
+    cache_clean_range(&usb_svc_stack, sizeof usb_svc_stack);
+    cache_clean_range(&usb_fiq_stack, sizeof usb_fiq_stack);
+    cache_clean_range(&usb_pagetable, sizeof usb_pagetable);
+    cache_clean_range(&uspios, sizeof uspios);
+
     secondary_start(1, usb_start);
 
     return pool;
@@ -95,6 +109,14 @@ static void uspi_packet_handler(unsigned cable, unsigned length, uint8_t *p)
 /* This routine initializes USPi on Core 1. */
 void usb_uspi_init(void)
 {
+    /* Initialize the MMU on this core. */
+    mmu_init(usb_pagetable);
+
+    /* Mark the mailbox section as uncacheable, unbufferable and strongly
+     * ordered so we can use it to communicate with the VideoCore without
+     * dealing with cache insanity. */
+    mmu_mark_strongly_ordered(usb_pagetable, uspios.mailbuffer);
+
     debug_printf("Starting USPi initialization.");
     int rc = USPiInitialize();
     USPI_PLATFORM_ASSERT(rc != 0);
@@ -306,7 +328,7 @@ int SetPowerStateOn (unsigned nDeviceId)
      * Response indicates new state, with/without waiting for the power to
      * become stable."
      */
-    struct __packed __aligned(16) {
+    struct mailbuffer {
         uint32_t bufsize;
         uint32_t code;
         struct __packed {
@@ -320,8 +342,12 @@ int SetPowerStateOn (unsigned nDeviceId)
         } tag;
 
         uint32_t endtag;
-    } mailbuffer = {
-        .bufsize = sizeof mailbuffer,
+    } __packed;
+
+    volatile struct mailbuffer *mailbuffer =
+        (struct mailbuffer *)uspios.mailbuffer;
+    *mailbuffer = (struct mailbuffer) {
+        .bufsize = sizeof *mailbuffer,
         .code = 0x00000000, /* 'process request' */
         .tag = {
             .id = 0x00028001, /* set power state */
@@ -362,7 +388,7 @@ int SetPowerStateOn (unsigned nDeviceId)
 
     /* Write the address of our SetPowerState property tag buffer, setting the
      * least significant bits to channel 8. */
-    uint32_t gpuaddr = (uint32_t)&mailbuffer | 0xc0000000;
+    uint32_t gpuaddr = (uint32_t)mailbuffer | 0xc0000000;
     mb->write1 = gpuaddr | 0x8;
 
     /* Now wait for the response. */
@@ -376,8 +402,8 @@ int SetPowerStateOn (unsigned nDeviceId)
     } while ((response & 0xf) != 8);
 
     USPI_PLATFORM_ASSERT((response & ~0xf) == gpuaddr);
-    USPI_PLATFORM_ASSERT(mailbuffer.code == 0x80000000);
-    USPI_PLATFORM_ASSERT(mailbuffer.tag.setpower.state & (1 << 0));
+    USPI_PLATFORM_ASSERT(mailbuffer->code == 0x80000000);
+    USPI_PLATFORM_ASSERT(mailbuffer->tag.setpower.state & (1 << 0));
 
     return 1;
 }

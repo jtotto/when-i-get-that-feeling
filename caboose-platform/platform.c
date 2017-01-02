@@ -64,8 +64,14 @@ void platform_init(uint8_t *pool)
     /* Clear the bss section. */
     memset(&bss_start, 0, &bss_end - &bss_start);
 
+    /* Bring the UART up first so that debug logging is available to the rest of
+     * the initialization routines. */
     pool = uart0_init(pool);
-    pool = mmu_init(pool);
+
+    void *pagetable;
+    pool = mmu_pagetable_alloc(pool, &pagetable);
+    mmu_init(pagetable);
+
     pool = irq_init(pool);
     pool = ipi_init(pool);
     pool = timer_init(pool);

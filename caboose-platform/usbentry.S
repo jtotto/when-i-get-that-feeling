@@ -13,12 +13,12 @@ usb_start:
 
     /* Set up the SVC stack (which we'll really just be using to run the USB
      * initialization code). */
-    ldr r0, =svc_stack
+    ldr r0, =usb_svc_stack
     ldr sp, [r0]
 
     /* Switch to FIQ mode to set up the stack pointer. */
     cps #FIQ_MODE
-    ldr r0, =fiq_stack
+    ldr r0, =usb_fiq_stack
     ldr sp, [r0]
 
     /* And back to SVC to wait. */
@@ -34,7 +34,8 @@ usb_start:
     /* Actually enable FIQs.  USPi's initialization depends on receiving USB
      * interrupts - it initiates a lot of synchronous transfers while
      * configuring devices, which it implements as a spin-loop testing a bit
-     * that gets cleared by its interrupt handler. */
+     * that gets cleared by its interrupt handler, so interrupts need to be
+     * available _before_ beginning the library initialization. */
     cpsie f
 
     /* Initialize USPi! */
@@ -49,9 +50,10 @@ fiq_except:
     sub lr, #4
 
     /* Stash the non-banked registers on our stack (the FIQ stack).  Note that
-     * we need to do this because we're forced to run the USPi initialization
-     * routine on this core, and it requires that interrupts be enabled in order
-     * to complete. */
+     * we need to do this even though at steady state there isn't any context to
+     * preserve because we're forced to run the USPi initialization routine on
+     * this core, and it requires that interrupts be enabled in order to
+     * complete. */
     stmfd sp!, {r0-r7, lr}
     /* Fix up sp's alignment. */
     sub sp, #4
