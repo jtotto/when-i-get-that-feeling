@@ -8,6 +8,7 @@
 #include <caboose-platform/bcm2835int.h>
 #include <caboose-platform/debug.h>
 #include <caboose-platform/irq.h>
+#include <caboose-platform/mmu.h>
 #include <caboose-platform/platform-events.h>
 #include <caboose-platform/util.h>
 
@@ -368,6 +369,10 @@ static void audio_init(struct dmaconblk conblks[2],
         conblk->stride = 0;
         /* Form a cycle. */
         conblk->nextconblk = (uint32_t)&conblks[!i];
+
+        /* Now make sure all of our modifications to the control block structure
+         * are visible from the DMA engine before handing it off. */
+        Clean(conblk, sizeof *conblk);
     }
 
     /* Start off pointing to the first control block. */
@@ -411,6 +416,8 @@ void audio(void)
                             &bufs[i][0],
                             sizeof bufs[0]);
         ASSERT(replylen == sizeof bufs[0]);
+
+        Clean(&bufs[i][0], sizeof bufs[0]);
     }
 
     /* Activate the DMA channel. */
@@ -424,6 +431,9 @@ void audio(void)
         int rc = AwaitEvent(DMA0_EVENTID);
         ASSERT(rc == 0xcab005e);
 
+        /* Assert that the engine is processing the other buffer right now. */
+        ASSERT(dma->conblkad == (uint32_t)&conblks[!i]);
+
         /* Refill it with new audio data. */
         int replylen = Send(audio_source,
                             &req,
@@ -431,6 +441,13 @@ void audio(void)
                             &bufs[i][0],
                             sizeof bufs[0]);
         ASSERT(replylen == sizeof bufs[0]);
+
+        /* Make sure the DMA engine observes our writes. */
+        Clean(&bufs[i][0], sizeof bufs[0]);
+
+        /* Assert that the engine is _still_ processing the other buffer right
+         * now. */
+        ASSERT(dma->conblkad == (uint32_t)&conblks[!i]);
 
         /* Flip the buffer. */
         i = !i;
