@@ -5,6 +5,7 @@
 #include "debug.h"
 #include "frames.h"
 #include "irq.h"
+#include "mmu.h"
 #include "pgalloc.h"
 #include "pl011-uart.h"
 #include "syscalltable.h"
@@ -59,6 +60,7 @@ void platform_init(uint8_t *pool)
     memset(&bss_start, 0, &bss_end - &bss_start);
 
     pool = uart0_init(pool);
+    pool = mmu_init(pool);
     pool = irq_init(pool);
     pool = timer_init(pool);
     pool = pgalloc_init(pool);
