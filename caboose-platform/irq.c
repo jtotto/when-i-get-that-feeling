@@ -77,6 +77,16 @@ void irq_enable(uint8_t irq)
     }
 }
 
+void irq_disable(uint8_t irq)
+{
+    volatile struct irqregs *irqregs = (struct irqregs *)ARM_IC_BASE;
+    if (irq < ARM_IRQS_PER_REG) {
+        irqregs->disable1 = 1 << irq;
+    } else {
+        irqregs->disable2 = 1 << (irq - ARM_IRQS_PER_REG);
+    }
+}
+
 void irq_register(uint8_t irq, void (*handler)(void))
 {
     ASSERT(handler);
@@ -133,4 +143,8 @@ void fiq_register(uint8_t irq)
 
     ASSERT(!irq_handlers[irq]);
     irqregs->fiqctl = FIQCTL_ENABLE | irq;
+
+    /* Explicitly disable this interrupt as an IRQ so we don't trip over it in
+     * the pending register. */
+    irq_disable(irq);
 }
