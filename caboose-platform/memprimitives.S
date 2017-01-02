@@ -7,6 +7,7 @@
 .global dcache_min
 .global dcache_invalidate_line
 .global dcache_clean_line
+.global dcache_clean_and_invalidate_line
 
 /* ---- MMU control ---- */
 
@@ -90,3 +91,13 @@ dcache_invalidate_line:
 dcache_clean_line:
 	mcr p15, 0, r0, c7, c10, 1
 	bx lr
+
+/* We want to...
+ * "Clean and invalidate data cache line by VA to PoC."
+ *
+ * http://infocenter.arm.com/help/index.jsp?topic=/com.arm.doc.ddi0434b/
+ * CIHGBCHB.html
+ */
+dcache_clean_and_invalidate_line:
+    mcr p15, 0, r0, c7, c14, 1
+    bx lr

@@ -51,7 +51,10 @@ void *syscalls[] = {
     [SYSCALL_ASYNC_SEND] = sys_AsyncSend,
     [SYSCALL_ASYNC_RECEIVE] = sys_AsyncReceive,
     [SYSCALL_AWAITEVENT] = sys_AwaitEvent,
-    [SYSCALL_ASSERT] = sys_Assert
+    [SYSCALL_ASSERT] = sys_Assert,
+    [SYSCALL_CLEAN] = sys_Clean,
+    [SYSCALL_INVALIDATE] = sys_Invalidate,
+    [SYSCALL_CLEAN_AND_INVALIDATE] = sys_CleanAndInvalidate
 };
 
 void platform_init(uint8_t *pool)

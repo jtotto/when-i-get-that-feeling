@@ -20,3 +20,6 @@ syscall AsyncSend, SYSCALL_ASYNC_SEND
 syscall AsyncReceive, SYSCALL_ASYNC_RECEIVE
 syscall AwaitEvent, SYSCALL_AWAITEVENT
 syscall Assert, SYSCALL_ASSERT
+syscall Clean, SYSCALL_CLEAN
+syscall Invalidate, SYSCALL_INVALIDATE
+syscall CleanAndInvalidate, SYSCALL_CLEAN_AND_INVALIDATE

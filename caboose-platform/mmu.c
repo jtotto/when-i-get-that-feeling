@@ -23,28 +23,55 @@ void cache_enable(void);
 uint32_t dcache_min(void);
 void dcache_invalidate_line(void *addr);
 void dcache_clean_line(void *addr);
+void dcache_clean_and_invalidate_line(void *addr);
 
 /* XXX We assume this doesn't vary across cores and can be shared globally. */
-size_t min_dcache_line_len;
+int cacheline_len;
 
-void dcachectl_clean_range(void *addr, uint32_t len)
+/* Let the optimizer fold all this away. */
+static void dcachectl_do_range(void *addr, int len, void (*op)(void *addr))
 {
-    char *line = addr;
-    do {
-        dcache_clean_line(line);
-        line += min_dcache_line_len;
-        len -= min_dcache_line_len;
-    } while (len > min_dcache_line_len);
+    /* How many cache lines does this range span? */
+    size_t lines = (len + cacheline_len - 1) / cacheline_len;
+    char *line;
+    size_t i;
+    for (i = 0, line = addr; i < lines; i++, line += cacheline_len) {
+        op(line);
+    }
 }
 
-void dcachectl_invalidate_range(void *addr, uint32_t len)
+void dcachectl_clean_range(void *addr, int len)
 {
-    char *line = addr;
-    do {
-        dcache_invalidate_line(line);
-        line += min_dcache_line_len;
-        len -= min_dcache_line_len;
-    } while (len > min_dcache_line_len);
+    dcachectl_do_range(addr, len, dcache_clean_line);
+}
+
+void dcachectl_invalidate_range(void *addr, int len)
+{
+    dcachectl_do_range(addr, len, dcache_invalidate_line);
+}
+
+void dcachectl_clean_and_invalidate_range(void *addr, int len)
+{
+    dcachectl_do_range(addr, len, dcache_clean_and_invalidate_line);
+}
+
+void sys_Clean(void *addr, int len)
+{
+    dsb();
+    dcachectl_clean_range(addr, len);
+}
+
+void sys_Invalidate(void *addr, int len)
+{
+    dcachectl_invalidate_range(addr, len);
+    dsb();
+}
+
+void sys_CleanAndInvalidate(void *addr, int len)
+{
+    dsb();
+    dcachectl_clean_and_invalidate_range(addr, len);
+    dsb();
 }
 
 /* Each top-level page table entry describes the configuration of a 1MB
@@ -84,7 +111,7 @@ void mmu_enable(void);
 
 uint8_t *mmu_init(uint8_t *pool)
 {
-    min_dcache_line_len = dcache_min();
+    cacheline_len = dcache_min();
 
     mmu_enable_smp();
 
