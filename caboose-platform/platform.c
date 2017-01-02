@@ -8,8 +8,10 @@
 #include "irq.h"
 #include "mmu.h"
 #include "pl011-uart.h"
+#include "secondary.h"
 #include "syscalltable.h"
 #include "timer.h"
+#include "usb.h"
 
 extern uint8_t bss_start;
 extern uint8_t bss_end;
@@ -67,6 +69,13 @@ void platform_init(uint8_t *pool)
     pool = irq_init(pool);
     pool = ipi_init(pool);
     pool = timer_init(pool);
+    pool = usb_init(pool);
+
+    /* Put the unused cores to sleep.  Would be good if there was some way I
+     * could automatically do this, but for now this just has to be kept in sync
+     * with the behaviour of the rest of the platform code manually. */
+    secondary_start(2, NULL);
+    secondary_start(3, NULL);
 
     /* Hand it over to the generic kernel initialization, which will start the
      * scheduler when it's ready. */

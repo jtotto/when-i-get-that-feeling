@@ -44,7 +44,16 @@
 /* To which core (0-3) should ARM FIQs be routed? (see irq.c) */
 #define CONFIG_FIQ_CORE 1
 
+/* How large should the stack allocated for SVC-mode USB init on Core 1 be? */
+#define CONFIG_USB_STACK_SIZE CONFIG_TASK_STACK_SIZE
+
 /* How large should the stack allocated for handling FIQ exceptions be? */
 #define CONFIG_FIQ_STACK_SIZE CONFIG_TASK_STACK_SIZE
+
+/* How big should the chunks in the USPi platform mempool be? */
+#define CONFIG_USPI_MEMPOOL_SIZE 4096
+
+/* How many items should we allocate for the USPi platform mempool? */
+#define CONFIG_USPI_MEMPOOL_COUNT 1024
 
 #endif

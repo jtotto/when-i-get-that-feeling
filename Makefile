@@ -8,12 +8,21 @@ OBJDUMP = $(PREFIX)objdump
 CABOOSE = CaboOSe/kernel
 PLATFORM = caboose-platform
 PRINTF = mini-printf
+USPI = uspi/lib
+USPIINC = uspi/include
 
-CPPFLAGS = -MMD -MP -I. -I$(CABOOSE) -I$(PRINTF) -iquote$(CABOOSE)/caboose
+CPPFLAGS = -MMD \
+		   -MP \
+		   -I. \
+		   -I$(CABOOSE) \
+		   -I$(PRINTF) \
+		   -I$(USPIINC) \
+		   -iquote$(CABOOSE)/caboose
 CFLAGS = -Wall \
 		 -Werror \
 		 -std=gnu99 \
 		 -march=armv7-a \
+		 -mtune=cortex-a7 \
 		 -nostdlib \
 		 -nostartfiles \
 		 -ffreestanding \
@@ -30,13 +39,16 @@ all: kernel.img
 OBJS := $(patsubst %.c, %.o, $(wildcard *.c)) \
 	$(patsubst $(CABOOSE)/%.c, $(CABOOSE)/%.o, $(wildcard $(CABOOSE)/*.c)) \
 	$(patsubst $(PRINTF)/%.c, $(PRINTF)/%.o, $(wildcard $(PRINTF)/*.c)) \
-	$(patsubst $(PLATFORM)/%.c, $(PLATFORM)/%.o, $(wildcard $(PLATFORM)/*.c))
+	$(patsubst $(PLATFORM)/%.c, $(PLATFORM)/%.o, $(wildcard $(PLATFORM)/*.c)) \
+	$(patsubst $(USPI)/%.c, $(USPI)/%.o, $(wildcard $(USPI)/*.c))
 
 AOBJS := \
 	$(patsubst $(PLATFORM)/%.S, $(PLATFORM)/%.o, $(wildcard $(PLATFORM)/*.S))
 $(AOBJS): $(PLATFORM)/offsets.h
 
 OBJS += $(AOBJS)
+
+$(OBJS): Makefile
 
 DEPS = $(OBJS:.o=.d)
 -include $(DEPS)
