@@ -5,7 +5,7 @@
 
 /* How many types of 'external events' does your platform/application support?
  * A common configuration maps interesting interrupts 1:1 to events. */
-#define CONFIG_EVENT_COUNT 2
+#define CONFIG_EVENT_COUNT 3
 
 /* How many notifications should be buffered for each type of external event? */
 #define CONFIG_EVENT_RING_COUNT 32
@@ -55,5 +55,11 @@
 
 /* How many items should we allocate for the USPi platform mempool? */
 #define CONFIG_USPI_MEMPOOL_COUNT 1024
+
+/* How large should the USB packet buffer be? */
+#define CONFIG_USB_PACKET_BUF_SIZE 64 /* largest USB-MIDI packet in practice */
+
+/* How many MIDI event packet buffers should we allocate? */
+#define CONFIG_MIDI_EVENT_PACKET_COUNT 128
 
 #endif

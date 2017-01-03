@@ -1,6 +1,7 @@
 #ifndef CABOOSE_PLATFORM_IPI_H
 #define CABOOSE_PLATFORM_IPI_H
 
+#include <stdbool.h>
 #include <stdint.h>
 
 #define IPI_USB 0
@@ -12,5 +13,6 @@ void ipi_register(uint8_t ipi, void (*handler)(void));
 void ipi_service(void);
 
 void ipi_deliver(uint8_t ipi);
+bool ipi_pending(uint8_t ipi);
 
 #endif

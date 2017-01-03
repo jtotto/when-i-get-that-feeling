@@ -8,6 +8,7 @@
 #include "irq.h"
 #include "mmu.h"
 #include "pl011-uart.h"
+#include "platform-events.h"
 #include "secondary.h"
 #include "syscalltable.h"
 #include "timer.h"
@@ -56,7 +57,8 @@ void *syscalls[] = {
     [SYSCALL_ASSERT] = sys_Assert,
     [SYSCALL_CLEAN] = sys_Clean,
     [SYSCALL_INVALIDATE] = sys_Invalidate,
-    [SYSCALL_CLEAN_AND_INVALIDATE] = sys_CleanAndInvalidate
+    [SYSCALL_CLEAN_AND_INVALIDATE] = sys_CleanAndInvalidate,
+    [SYSCALL_ACKNOWLEDGEEVENT] = sys_AcknowledgeEvent
 };
 
 void platform_init(uint8_t *pool)
@@ -129,4 +131,20 @@ void sys_Assert(const char *msg)
     while(true) {
         /* do nothing */
     }
+}
+
+static void (*ack_handlers[CONFIG_EVENT_COUNT])(int ack);
+
+void event_register_ack_handler(int eventid, void (*handler)(int ack))
+{
+    ASSERT(!ack_handlers[eventid]);
+    ack_handlers[eventid] = handler;
+}
+
+int sys_AcknowledgeEvent(int eventid, int ack)
+{
+    ASSERT(eventid < CONFIG_EVENT_COUNT);
+    ASSERT(ack_handlers[eventid]);
+    ack_handlers[eventid](ack);
+    return 0;
 }

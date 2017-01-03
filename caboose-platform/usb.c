@@ -3,6 +3,7 @@
 
 #include <caboose/config.h>
 #include <caboose/events.h>
+#include <caboose/platform.h>
 #include <caboose/util.h>
 
 #include <uspi.h>
@@ -15,6 +16,7 @@
 #include "ipi.h"
 #include "irq.h"
 #include "mempool.h"
+#include "midi.h"
 #include "mmu.h"
 #include "platform-events.h"
 #include "secondary.h"
@@ -50,16 +52,91 @@ struct {
     void *mailbuffer;
 } uspios;
 
-void usb_start(void);
+/* Buffer for passing MIDI packets between the main application core and the USB
+ * core.  Access is synchronized using the USB IPI bit in the Core 0 mailbox -
+ * the USB core owns it (and can write it) when the bit is clear, and the
+ * application core owns it for as long as the bit is set.  MIDI/USB deadlines
+ * are far more relaxed than the audio generation deadlines, so we'll have the
+ * USB core spin to synchronize access. */
+struct usbmidipkt midisync;
+
+/* Buffer for MIDI packets waiting for delivery to userspace (that is, waiting
+ * for the receiving task's AwaitEvent()). */
+struct mempool midipool;
+
+/* This is called by USPi in the FIQ handler when a new packet has been
+ * received.  All we want to do here is put the packet somewhere that Core 0 can
+ * find it and then prod it to have a look.
+ *
+ * Note that this is a handler for the altered semantics of our patched version
+ * of USPi - what we're getting is a raw USB-MIDI packet that we need to parse
+ * ourselves. */
+static void uspi_packet_handler(unsigned cable, unsigned length, uint8_t *p)
+{
+    debug_printf("MIDI packet with length %u!", length);
+
+    USPI_PLATFORM_ASSERT(length <= CONFIG_USB_PACKET_BUF_SIZE);
+
+    /* Synchronize access to the inter-core buffer by waiting until the main
+     * core has completed processing the last IPI we pinged them with. */
+    while (ipi_pending(IPI_USB)) {
+        /* spin */
+    }
+
+    /* Copy the new packet into the communication buffer. */
+    midisync.len = length;
+    memcpy(midisync.packet, p, length);
+
+    /* Make sure that we're entirely finished writing it... */
+    dmb();
+
+    /* ... and signal the main core that there's a packet. */
+    ipi_deliver(IPI_USB);
+}
 
 static void usb_ipi_handler(void)
 {
     debug_printf("USB IPI!");
+
+    /* Grab a packet buffer for the new packet. */
+    struct usbmidipkt *pkt = mempool_alloc(&midipool);
+    ASSERT(pkt);
+
+    /* Fill it with the contents of the inter-core sync buffer. */
+    memcpy(pkt, &midisync, USBMIDIPKT_SIZE(&midisync));
+
+    /* Hand this packet off to userspace. */
+    event_deliver(MIDIPKT_EVENTID, (int)pkt);
+
+    /* Ensure that we're entirely finished reading the sync buffer... */
+    dmb();
+
+    /* ... and signal the USB core that we're done, implicitly, by returning
+     * from this handler and clearing the bit for this IPI in the mailbox. */
 }
 
+/* Userspace pings us back here through AcknowledgeEvent() to return the packet
+ * buffer when it's done. */
+void midi_event_ack_handler(int ack)
+{
+    /* Just put it back on the free list. */
+    mempool_free(&midipool, (void *)ack);
+}
+
+void usb_start(void);
+
+/* This is the vanilla initialization routine called on the main core during
+ * platform startup (interrupts disabled, scheduler not yet started). */
 uint8_t *usb_init(uint8_t *pool)
 {
-    /* Register our IPI handler for USB IPIs. */
+    mempool_init(&midipool,
+                 pool,
+                 sizeof (struct usbmidipkt),
+                 CONFIG_MIDI_EVENT_PACKET_COUNT);
+    pool += sizeof (struct usbmidipkt) * CONFIG_MIDI_EVENT_PACKET_COUNT;
+
+    event_register_ack_handler(MIDIPKT_EVENTID, midi_event_ack_handler);
+
     ipi_register(IPI_USB, usb_ipi_handler);
 
     pool = (uint8_t *)ALIGN((uintptr_t)pool, 8);
@@ -96,14 +173,6 @@ uint8_t *usb_init(uint8_t *pool)
     secondary_start(1, usb_start);
 
     return pool;
-}
-
-/* Note that this is a handler for the altered semantics of our patched version
- * of USPi - what we're getting is a raw USB-MIDI packet that we need to parse
- * ourselves. */
-static void uspi_packet_handler(unsigned cable, unsigned length, uint8_t *p)
-{
-    debug_printf("MIDI packet with length %u!", length);
 }
 
 /* This routine initializes USPi on Core 1. */

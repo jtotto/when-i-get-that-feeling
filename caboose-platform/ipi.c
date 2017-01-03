@@ -1,5 +1,3 @@
-#include <stdbool.h>
-
 #include <caboose/platform.h>
 
 #include "bcm2836.h"
@@ -34,6 +32,13 @@ void ipi_deliver(uint8_t ipi)
     volatile uint32_t *core0_mailbox0_set0 =
         (uint32_t *)ARM_LOCAL_MAILBOX0_SET0;
     *core0_mailbox0_set0 = 1 << ipi;
+}
+
+bool ipi_pending(uint8_t ipi)
+{
+    volatile uint32_t *core0_mailbox0_clr0 =
+        (uint32_t *)ARM_LOCAL_MAILBOX0_CLR0;
+    return !!(*core0_mailbox0_clr0 & (1 << ipi));
 }
 
 void ipi_service(void)

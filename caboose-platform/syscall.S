@@ -23,3 +23,4 @@ syscall Assert, SYSCALL_ASSERT
 syscall Clean, SYSCALL_CLEAN
 syscall Invalidate, SYSCALL_INVALIDATE
 syscall CleanAndInvalidate, SYSCALL_CLEAN_AND_INVALIDATE
+syscall AcknowledgeEvent, SYSCALL_ACKNOWLEDGEEVENT

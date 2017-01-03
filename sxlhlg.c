@@ -6,11 +6,14 @@
 
 #include "audio.h"
 
+void midisrc(void);
 void samplesrc(void);
 
 void application(void)
 {
     debug_printf("Get up, get up, get up, get up!");
+
+    Create(5, midisrc);
 
     while (true) {
         /* Eat the timer events. */
