@@ -1,7 +1,7 @@
 .global fiq_except
 .global usb_start
 
-#include "svcmode.inc"
+#include "coreinit.inc"
 
 #define FIQ_MODE 0b10001
 #define SVC_MODE 0b10011
@@ -30,6 +30,9 @@ usb_start:
      * just get that set up here. */
     ldr r0, =vector_table
     mcr p15, 0, r0, c12, c0, 0
+
+    /* Enable hardware floating point. */
+    enable_vfp r0
 
     /* Actually enable FIQs.  USPi's initialization depends on receiving USB
      * interrupts - it initiates a lot of synchronous transfers while

@@ -23,6 +23,8 @@ CFLAGS = -Wall \
 		 -std=gnu99 \
 		 -march=armv7-a \
 		 -mtune=cortex-a7 \
+		 -mfloat-abi=hard \
+		 -mfpu=vfpv4 \
 		 -nostdlib \
 		 -nostartfiles \
 		 -ffreestanding \
@@ -30,6 +32,9 @@ CFLAGS = -Wall \
 
 CFLAGS += -O3
 CFLAGS += -ggdb
+
+ASFLAGS = -mfloat-abi=hard \
+		  -mfpu=vfpv4
 
 LDFLAGS = -T caboose-platform/platform.ld
 LDLIBS = -lgcc

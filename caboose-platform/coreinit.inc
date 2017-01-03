@@ -1,5 +1,5 @@
-#ifndef CABOOSE_PLATFORM_SVCMODE_INC
-#define CABOOSE_PLATFORM_SVCMODE_INC
+#ifndef CABOOSE_PLATFORM_COREINIT_INC
+#define CABOOSE_PLATFORM_COREINIT_INC
 
 /*
  * "Helper macro to enter SVC mode cleanly and mask interrupts. reg is
@@ -29,6 +29,16 @@
 1:  msr cpsr_c, \reg
 2:
 
+    .endm
+
+/* Helper macro to enable the VFP.  Taken line for line from Peter Lemon's
+ * Raspberry Pi demo repository. */
+    .macro enable_vfp reg
+    mrc p15, 0, \reg, c1, c0, 2 /* R0 = Access Control Register */
+    orr r0, #(0x300000 + 0xC00000) /* Enable Single & Double Precision */
+    mcr p15, 0, \reg, c1, c0, 2 /* Access Control Register = R0 */
+    mov r0, #0x40000000 /* R0 = Enable VFP */
+    vmsr fpexc, \reg /* FPEXC = R0 */
     .endm
 
 #endif

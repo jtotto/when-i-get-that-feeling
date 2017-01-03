@@ -3,7 +3,7 @@
 .global vector_table
 .global secondary_null_start
 
-#include "svcmode.inc"
+#include "coreinit.inc"
 
 start:
     /* Put the ARM in SVC mode. */
@@ -15,6 +15,9 @@ start:
     /* Point the VBAR at our vector table. */
     ldr r0, =vector_table
     mcr p15, 0, r0, c12, c0, 0
+
+    /* Enable hardware floating point. */
+    enable_vfp r0
 
     /* Call platform_init() with the start of the free memory pool. */
     ldr r0, =pool_begin
