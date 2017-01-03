@@ -15,9 +15,5 @@ void application(void)
 
     Create(5, midisrc);
 
-    while (true) {
-        /* Eat the timer events. */
-        AwaitEvent(TIMER_EVENTID);
-        debug_printf("tick");
-    }
+    Exit();
 }

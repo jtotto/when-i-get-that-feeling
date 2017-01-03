@@ -62,4 +62,7 @@
 /* How many MIDI event packet buffers should we allocate? */
 #define CONFIG_MIDI_EVENT_PACKET_COUNT 128
 
+/* Should the timer interrupt be enabled? */
+//#define CONFIG_ENABLE_TIMER
+
 #endif

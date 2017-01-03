@@ -24,6 +24,7 @@ struct systimerregs {
     uint32_t c3;
 } __packed;
 
+#ifdef CONFIG_ENABLE_TIMER
 static void timer_irq_handler(void)
 {
     volatile struct systimerregs *timer =
@@ -39,6 +40,7 @@ static void timer_irq_handler(void)
 
     event_deliver(TIMER_EVENTID, 0xcab005e);
 }
+#endif
 
 uint8_t *timer_init(uint8_t *pool)
 {
@@ -51,7 +53,9 @@ uint8_t *timer_init(uint8_t *pool)
      * would be most suitable for a bare metal OS" - more community wisdom */
     timer->c3 = timer->clo + COMPARE_INCREMENT;
 
+#ifdef CONFIG_ENABLE_TIMER
     irq_register(ARM_IRQ_TIMER3, timer_irq_handler);
+#endif
     
     return pool;
 }
