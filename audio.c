@@ -290,9 +290,18 @@ static void audio_init(struct dmaconblk conblks[2],
      *     011 = GPIO Pin takes alternate function 4
      *     010 = GPIO Pin takes alternate function 5
      *
-     * Pins 40 and 45 are covered by GPFSEL4. */
+     * Pins 40 and 45 are covered by GPFSEL4.
+     *
+     * XXX BIG SCARY WARNING XXX
+     *
+     * Turns out the USB host controller depends on the (apparently non-zero)
+     * reset value of function select register 4, so we need to carefully
+     * preserve the values of the bits we're not touching here.  USPi doesn't
+     * directly manipulate the register and it's the only thing running on the
+     * other core, so for now we're not going to bother with a spinlock or
+     * anything. */
     volatile struct gpioregs *gpio = (struct gpioregs *)ARM_GPIO_BASE;
-    gpio->gpfsel4 =
+    gpio->gpfsel4 |=
         (GPIO_ALT0 << ((40 - GPIO_GPFSEL4_BASE) * GPIO_GPFSEL_BITS))
         | (GPIO_ALT0 << ((45 - GPIO_GPFSEL4_BASE) * GPIO_GPFSEL_BITS));
 
