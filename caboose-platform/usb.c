@@ -73,8 +73,6 @@ struct mempool midipool;
  * ourselves. */
 static void uspi_packet_handler(unsigned cable, unsigned length, uint8_t *p)
 {
-    debug_printf("MIDI packet with length %u!", length);
-
     USPI_PLATFORM_ASSERT(length <= CONFIG_USB_PACKET_BUF_SIZE);
 
     /* Synchronize access to the inter-core buffer by waiting until the main
@@ -96,8 +94,6 @@ static void uspi_packet_handler(unsigned cable, unsigned length, uint8_t *p)
 
 static void usb_ipi_handler(void)
 {
-    debug_printf("USB IPI!");
-
     /* Grab a packet buffer for the new packet. */
     struct usbmidipkt *pkt = mempool_alloc(&midipool);
     ASSERT(pkt);

@@ -8,7 +8,8 @@
 
 struct msghdr {
     enum {
-        GET_AUDIO
+        GET_AUDIO,
+        DELIVER_MIDI
     } type;
     uint8_t data[];
 };

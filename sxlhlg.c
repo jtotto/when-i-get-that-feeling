@@ -5,14 +5,15 @@
 #include <caboose-platform/platform-events.h>
 
 #include "audio.h"
-
-void midisrc(void);
-void samplesrc(void);
+#include "midi.h"
+#include "synth.h"
 
 void application(void)
 {
     debug_printf("Get up, get up, get up, get up!");
 
+    Create(1, audio);
+    Create(2, synth);
     Create(5, midisrc);
 
     Exit();
